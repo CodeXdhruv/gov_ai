@@ -36,7 +36,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img 
-              src="/logo.png" 
+              src="/favicon.svg" 
               alt="GovAI Logo" 
               className="w-10 h-10 rounded-xl shadow-md group-hover:scale-105 transition-transform"
             />

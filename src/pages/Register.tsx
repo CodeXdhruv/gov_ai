@@ -70,7 +70,7 @@ const Register = () => {
         <div className="text-center mb-8">
           <Link to="/" className="inline-block">
             <img 
-              src="/logo.png" 
+              src="/favicon.svg" 
               alt="GovAI Logo" 
               className="w-16 h-16 rounded-2xl shadow-lg mx-auto hover:scale-105 transition-transform"
             />
