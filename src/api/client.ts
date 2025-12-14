@@ -3,9 +3,14 @@ import axios, { AxiosError } from 'axios';
 // Token storage key
 const TOKEN_KEY = 'govai_token';
 
+// API base URL - uses environment variable or falls back to proxy
+const API_BASE_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
