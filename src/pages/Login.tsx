@@ -15,8 +15,8 @@ const Login = () => {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Get the redirect path from location state, or default to dashboard
-    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+    // Get the redirect path from location state, or default to home
+    const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,10 +49,12 @@ const Login = () => {
             >
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Link to="/" className="inline-flex items-center gap-3">
-                        <div className="w-14 h-14 bg-amber-400 rounded-2xl flex items-center justify-center shadow-lg">
-                            <Zap className="w-7 h-7 text-slate-900" />
-                        </div>
+                    <Link to="/" className="inline-block">
+                        <img 
+                            src="/logo.png" 
+                            alt="GovAI Logo" 
+                            className="w-16 h-16 rounded-2xl shadow-lg mx-auto hover:scale-105 transition-transform"
+                        />
                     </Link>
                     <h1 className="text-3xl font-bold text-white mt-4">Welcome Back</h1>
                     <p className="text-blue-200 mt-2">Sign in to your GovAI account</p>

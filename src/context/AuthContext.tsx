@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { loginUser, registerUser, getCurrentUser, AuthResponse, User } from '../api/client';
+import { loginUser, registerUser, getCurrentUser, healthCheck, AuthResponse, User } from '../api/client';
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  backendReady: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -19,6 +20,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [backendReady, setBackendReady] = useState(false);
+
+  // Warm up backend on mount (handles Render cold starts)
+  useEffect(() => {
+    const warmUpBackend = async () => {
+      try {
+        await healthCheck();
+        setBackendReady(true);
+      } catch (error) {
+        console.log('Backend warming up...');
+        // Retry after a delay
+        setTimeout(async () => {
+          try {
+            await healthCheck();
+            setBackendReady(true);
+          } catch {
+            setBackendReady(true); // Continue anyway
+          }
+        }, 5000);
+      }
+    };
+    warmUpBackend();
+  }, []);
 
   // Load token from localStorage on mount
   useEffect(() => {
@@ -47,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const response: AuthResponse = await loginUser(email, password);
-    
+
     // Store token
     localStorage.setItem(TOKEN_KEY, response.access_token);
     setToken(response.access_token);
@@ -56,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string, password: string, name: string) => {
     const response: AuthResponse = await registerUser(email, password, name);
-    
+
     // Store token
     localStorage.setItem(TOKEN_KEY, response.access_token);
     setToken(response.access_token);
@@ -74,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     token,
     isAuthenticated: !!user && !!token,
     isLoading,
+    backendReady,
     login,
     register,
     logout,

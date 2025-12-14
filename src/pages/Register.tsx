@@ -68,10 +68,12 @@ const Register = () => {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <div className="w-14 h-14 bg-amber-400 rounded-2xl flex items-center justify-center shadow-lg">
-              <Zap className="w-7 h-7 text-slate-900" />
-            </div>
+          <Link to="/" className="inline-block">
+            <img 
+              src="/logo.png" 
+              alt="GovAI Logo" 
+              className="w-16 h-16 rounded-2xl shadow-lg mx-auto hover:scale-105 transition-transform"
+            />
           </Link>
           <h1 className="text-3xl font-bold text-white mt-4">Create Account</h1>
           <p className="text-blue-200 mt-2">Join GovAI to start detecting anomalies</p>
