@@ -283,7 +283,7 @@ const Home = ({ setAnalysisResult, setIsAnalyzing }: HomeProps) => {
               <span className="font-bold text-white">Gov<span className="text-amber-400">AI</span></span>
             </div>
             <p className="text-sm text-center md:text-right">
-              © 2024 GovAI – Unsupervised Electricity Theft Detection System.
+              © 2025 GovAI – Unsupervised Electricity Theft Detection System.
             </p>
           </div>
         </div>
