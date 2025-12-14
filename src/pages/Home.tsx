@@ -277,9 +277,7 @@ const Home = ({ setAnalysisResult, setIsAnalyzing }: HomeProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center">
-                <Zap className="w-5 h-5 text-slate-900" />
-              </div>
+              <img src="/favicon.svg" alt="GovAI Logo" className="w-10 h-10 rounded-xl" />
               <span className="font-bold text-white">Gov<span className="text-amber-400">AI</span></span>
             </div>
             <p className="text-sm text-center md:text-right">
