@@ -1,12 +1,49 @@
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin } from 'lucide-react';
+import { MapPin, LayoutGrid, Map } from 'lucide-react';
 import { ZoneStats } from '../api/client';
+import IndiaMap, { StateData } from './IndiaMap';
 
 interface RegionMapProps {
   zones: ZoneStats[];
 }
 
+// Map zone names to state codes for India data
+const zoneToStateCode: Record<string, string> = {
+  'North India': 'UP',
+  'West India': 'MH',
+  'South India': 'KA',
+  'East India': 'WB',
+  'Central India': 'MP',
+  // Individual states
+  'UP': 'UP', 'MH': 'MH', 'DL': 'DL', 'KA': 'KA', 'GJ': 'GJ',
+  'TN': 'TN', 'WB': 'WB', 'RJ': 'RJ', 'MP': 'MP', 'AP': 'AP',
+  'TS': 'TS', 'KL': 'KL', 'BR': 'BR', 'HR': 'HR', 'PB': 'PB',
+  'OR': 'OR', 'AS': 'AS', 'JH': 'JH', 'CG': 'CG',
+};
+
 const RegionMap = ({ zones }: RegionMapProps) => {
+  const [viewMode, setViewMode] = useState<'cards' | 'map'>('cards');
+
+  // Convert zone data to state data for the map
+  const stateData: StateData[] = useMemo(() => {
+    return zones.map(zone => ({
+      stateCode: zoneToStateCode[zone.zone] || zone.zone,
+      stateName: zone.zone,
+      anomalyRate: zone.anomaly_rate,
+      anomalyCount: zone.anomaly_count,
+      consumerCount: zone.consumer_count,
+      avgScore: zone.avg_anomaly_score
+    }));
+  }, [zones]);
+
+  // Check if this is India data
+  const isIndiaData = useMemo(() => {
+    const indiaZones = ['North India', 'West India', 'South India', 'East India', 'Central India'];
+    const indiaStates = ['UP', 'MH', 'DL', 'KA', 'GJ', 'TN', 'WB', 'RJ', 'MP', 'AP', 'TS', 'KL', 'BR', 'HR', 'PB'];
+    return zones.some(z => indiaZones.includes(z.zone) || indiaStates.includes(z.zone));
+  }, [zones]);
+
   const getZoneGradient = (anomalyRate: number) => {
     if (anomalyRate >= 0.1) return 'from-red-500 to-red-600';
     if (anomalyRate >= 0.05) return 'from-amber-500 to-amber-600';
@@ -30,25 +67,70 @@ const RegionMap = ({ zones }: RegionMapProps) => {
 
   const maxAnomalyRate = Math.max(...zones.map((z) => z.anomaly_rate), 0.1);
 
+  const handleStateClick = (stateCode: string) => {
+    console.log('State clicked:', stateCode);
+    // Could filter the results table by this state
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
-          <MapPin className="w-5 h-5 text-white" />
+      {/* Header with View Toggle */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
+            <MapPin className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 text-lg">
+              {isIndiaData ? '🇮🇳 India Analysis' : 'Zone Analysis'}
+            </h3>
+            <p className="text-sm text-slate-500">{zones.length} regions monitored</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-bold text-slate-900 text-lg">Zone Analysis</h3>
-          <p className="text-sm text-slate-500">{zones.length} zones monitored</p>
-        </div>
+
+        {/* View Toggle (only show if India data) */}
+        {isIndiaData && zones.length > 0 && (
+          <div className="flex bg-slate-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'cards'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Cards
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === 'map'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Map className="w-4 h-4" />
+              Map
+            </button>
+          </div>
+        )}
       </div>
 
       {zones.length === 0 ? (
         <div className="text-center py-12 text-slate-400">
           No zone data available
         </div>
+      ) : viewMode === 'map' && isIndiaData ? (
+        /* India Map View */
+        <IndiaMap 
+          stateData={stateData} 
+          onStateClick={handleStateClick}
+          height="400px"
+        />
       ) : (
         <>
-          {/* Zone Grid */}
+          {/* Zone Grid (Cards View) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
             {zones.map((zone, index) => (
               <motion.div
