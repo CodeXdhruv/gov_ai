@@ -207,16 +207,34 @@ export interface ZoneStats {
  * Upload a CSV file for analysis
  */
 export const uploadFile = async (file: File): Promise<UploadResponse> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  
-  const response = await api.post<UploadResponse>('/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
-  return response.data;
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post<UploadResponse>('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
+      if (error.response?.status === 401) {
+        throw new Error('Please login to upload files');
+      }
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Request timeout - the server may be starting up, please try again');
+      }
+      if (!error.response) {
+        throw new Error('Cannot connect to server - please check your internet connection');
+      }
+    }
+    throw error;
+  }
 };
 
 /**
