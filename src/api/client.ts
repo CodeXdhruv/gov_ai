@@ -205,36 +205,71 @@ export interface ZoneStats {
 
 /**
  * Upload a CSV file for analysis
+ * Optimized with retry logic and extended timeout for large files
  */
-export const uploadFile = async (file: File): Promise<UploadResponse> => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await api.post<UploadResponse>('/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    
-    return response.data;
-  } catch (error) {
-    if (error instanceof AxiosError) {
-      if (error.response?.data?.detail) {
-        throw new Error(error.response.data.detail);
-      }
-      if (error.response?.status === 401) {
-        throw new Error('Please login to upload files');
-      }
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Request timeout - the server may be starting up, please try again');
-      }
-      if (!error.response) {
-        throw new Error('Cannot connect to server - please check your internet connection');
+export const uploadFile = async (
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<UploadResponse> => {
+  const MAX_RETRIES = 3;
+  const UPLOAD_TIMEOUT = 120000; // 2 minutes for large files
+  
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post<UploadResponse>('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: UPLOAD_TIMEOUT,
+        onUploadProgress: (progressEvent) => {
+          if (onProgress && progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress(percent);
+          }
+        },
+      });
+      
+      return response.data;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        // Don't retry auth errors
+        if (error.response?.status === 401) {
+          throw new Error('Please login to upload files');
+        }
+        
+        // Don't retry if server explicitly rejected
+        if (error.response?.data?.detail) {
+          throw new Error(error.response.data.detail);
+        }
+        
+        // Retry on timeout or network errors
+        if (error.code === 'ECONNABORTED' || !error.response) {
+          lastError = new Error(
+            attempt < MAX_RETRIES 
+              ? `Upload attempt ${attempt} failed, retrying...`
+              : 'Server is taking too long. The Render backend may be starting up - please wait 30 seconds and try again.'
+          );
+          
+          if (attempt < MAX_RETRIES) {
+            // Exponential backoff: 1s, 2s, 4s
+            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
+            continue;
+          }
+        }
+        
+        lastError = new Error('Cannot connect to server - please check your internet connection');
+      } else {
+        lastError = error instanceof Error ? error : new Error('Upload failed');
       }
     }
-    throw error;
   }
+  
+  throw lastError || new Error('Upload failed after multiple attempts');
 };
 
 /**
@@ -312,4 +347,18 @@ export const healthCheck = async (): Promise<{ status: string; data_loaded: bool
   return response.data;
 };
 
+/**
+ * Warmup server - call this before upload to wake up sleeping Render backend
+ * Returns true if server is ready, false if unreachable
+ */
+export const warmupServer = async (): Promise<boolean> => {
+  try {
+    await api.get('/health', { timeout: 30000 });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export default api;
+
